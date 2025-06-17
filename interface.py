@@ -34,6 +34,18 @@ class UI:
             options=date_id_dict,#type: ignore
             value=date_id_dict[-1]['value'] 
         )
+    
+    @staticmethod
+    def change_dropdown():
+        return dcc.Dropdown(
+            id='change-dropdown',
+            options=[
+                {'label': 'All', 'value': 'all'},
+                {'label': 'Increase', 'value': 'Increase'},
+                {'label': 'Decrease', 'value': 'Decrease'}
+            ],
+            value='all'
+        )
 
 
 if __name__ == '__main__':

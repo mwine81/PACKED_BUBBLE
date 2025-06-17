@@ -104,7 +104,7 @@ def load_sdud():
     return data
 
 
-def fetch_data(date_id: int, state_filter: str, group_by_col: str):
+def fetch_data(date_id: int, state_filter: str, group_by_col: str, **kwargs) -> pl.DataFrame:
     # add context for group_by_col to be either 'product' or 'product_group'
     if group_by_col not in ['product', 'product_group']:
         raise ValueError("group_by_col must be either 'product' or 'product_group'")
@@ -114,6 +114,8 @@ def fetch_data(date_id: int, state_filter: str, group_by_col: str):
     old_nadac = (c.previous_unit_price * c.units).round(2).alias('old_nadac')
     total_diff = (unit_price_change * c.units).alias('total_diff')
     diff_per_rx = (c.total_diff / c.rx_count).round(2).alias('diff_per_rx')
+
+
 
     # avg nadac change per unit
     def avg_unit_change() -> pl.Expr:
@@ -138,6 +140,11 @@ def fetch_data(date_id: int, state_filter: str, group_by_col: str):
 
     data = sdud.join(nadac, on='ndc').with_columns(unit_price_change.round(4), total_diff.cast(pl.Int64),new_nadac, old_nadac)
     data = data.join(load_medispan().select(c.ndc, c.gpi_14_name.alias('product'), c.gpi_8_base_name.alias('product_group')), on='ndc')
+
+    
+    if kwargs.get('product_group_filter'):
+        data = data.filter(c.product_group == kwargs['product_group_filter'])
+
     data = (
         data
         .group_by(group_by_col)
@@ -145,6 +152,8 @@ def fetch_data(date_id: int, state_filter: str, group_by_col: str):
         .with_columns(avg_new_nadac, avg_old_nadac)
         .with_columns(diff_per_rx)
         .with_columns(abs_diff_col(), classification(), avg_unit_change(), percent_change())
+        .filter(c.total_diff != 0)  # Filter out rows where total_diff is 0
+        .filter(c.total_diff.is_not_null())
     )
     return data
 
