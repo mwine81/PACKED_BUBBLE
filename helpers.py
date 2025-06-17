@@ -115,12 +115,20 @@ def fetch_data(date_id: int, state_filter: str, group_by_col: str):
     total_diff = (unit_price_change * c.units).alias('total_diff')
     diff_per_rx = (c.total_diff / c.rx_count).round(2).alias('diff_per_rx')
 
+    # avg nadac change per unit
+    def avg_unit_change() -> pl.Expr:
+        return (c.avg_new_nadac - c.avg_old_nadac).round(2).alias('avg_unit_change')
+    
     def classification()-> pl.Expr:
         # when total_diff is less than 0, return 'Decrease', otherwise return 'Increase'
         return pl.when(c.total_diff < 0).then(pl.lit('Decrease')).otherwise(pl.lit('Increase')).alias('classification')
     # add absolut columns for charting
     def abs_diff_col() -> pl.Expr:
         return cs.matches('(?i)diff').abs().name.suffix('_abs')
+    
+    # calculate percent change from old nadac to new nadac
+    def percent_change() -> pl.Expr:
+        return ((c.new_nadac - c.old_nadac) / c.old_nadac).round(4).alias('percent_change')    
 
     avg_new_nadac = (c.new_nadac / c.units).round(4).alias('avg_new_nadac')
     avg_old_nadac = (c.old_nadac / c.units).round(4).alias('avg_old_nadac')
@@ -136,7 +144,7 @@ def fetch_data(date_id: int, state_filter: str, group_by_col: str):
         .agg(pl.col(['units','rx_count','total_diff', 'new_nadac', 'old_nadac']).sum())
         .with_columns(avg_new_nadac, avg_old_nadac)
         .with_columns(diff_per_rx)
-        .with_columns(abs_diff_col(), classification())
+        .with_columns(abs_diff_col(), classification(), avg_unit_change(), percent_change())
     )
     return data
 
