@@ -23,7 +23,8 @@ class UI:
         return dcc.Dropdown(
             id='state-dropdown',
             options=[{'label': state, 'value': abbr} for abbr, state in state_dict.items()],
-            value='XX'  # Default value
+            value='XX',
+            clearable=False  # Default value
         )
     
     @staticmethod
@@ -45,6 +46,15 @@ class UI:
                 {'label': 'Decrease', 'value': 'Decrease'}
             ],
             value='all'
+        )
+    
+    @staticmethod
+    def product_dropdown():
+        date_id_dict = [{'label': date, 'value': date_id} for date, date_id in create_date_id_dict().items()]
+        return dcc.Dropdown(
+            id='date-dropdown',
+            options=date_id_dict,#type: ignore
+            value=date_id_dict[-1]['value'] 
         )
 
 

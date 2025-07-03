@@ -44,6 +44,7 @@ def generate_nadac_table():
         .sort(by=['ndc','effective_date','as_of'])
         .unique(subset=['ndc', 'effective_date'], keep='first')
         .filter(max_effective_date_filter)
+        .sort(by=['ndc','effective_date'])
         .with_columns(previous_price)
         .with_columns(date_filter)
         .drop(cs.matches('(?i)as_of|explanation|classification|is_rx|updated'))
@@ -104,15 +105,15 @@ def load_sdud():
     return data
 
 
-def fetch_data(date_id: int, state_filter: str, group_by_col: str, **kwargs) -> pl.DataFrame:
+def fetch_data(date_id: int, state_filter: str, group_by_col: list[str], **kwargs) -> pl.LazyFrame:
     # add context for group_by_col to be either 'product' or 'product_group'
-    if group_by_col not in ['product', 'product_group']:
-        raise ValueError("group_by_col must be either 'product' or 'product_group'")
+    # if group_by_col not in ['product', 'product_group']:
+    #     raise ValueError("group_by_col must be either 'product' or 'product_group'")
 
     unit_price_change = (c.unit_price - c.previous_unit_price).alias('unit_price_change')
     new_nadac = (c.unit_price * c.units).round(2).alias('new_nadac')
     old_nadac = (c.previous_unit_price * c.units).round(2).alias('old_nadac')
-    total_diff = (unit_price_change * c.units).alias('total_diff')
+    total_diff = (new_nadac - old_nadac).alias('total_diff')
     diff_per_rx = (c.total_diff / c.rx_count).round(2).alias('diff_per_rx')
 
 
@@ -138,13 +139,13 @@ def fetch_data(date_id: int, state_filter: str, group_by_col: str, **kwargs) -> 
     sdud = load_sdud().filter(c.state == state_filter)
     nadac = load_nadac().filter(c.date_id == date_id)
 
-    data = sdud.join(nadac, on='ndc').with_columns(unit_price_change.round(4), total_diff.cast(pl.Int64),new_nadac, old_nadac)
-    data = data.join(load_medispan().select(c.ndc, c.gpi_14_name.alias('product'), c.gpi_8_base_name.alias('product_group')), on='ndc')
+    data = sdud.join(nadac, on='ndc').with_columns(unit_price_change.round(4),new_nadac, old_nadac).with_columns((c.new_nadac - c.old_nadac).alias('total_diff'))
+    data = data.join(load_medispan().select(c.ndc, c.generic_name.alias('product'), c.gpi_10_generic_name.alias('product_group')), on='ndc')
 
     
     if kwargs.get('product_group_filter'):
         data = data.filter(c.product_group == kwargs['product_group_filter'])
-
+    
     data = (
         data
         .group_by(group_by_col)
@@ -152,18 +153,16 @@ def fetch_data(date_id: int, state_filter: str, group_by_col: str, **kwargs) -> 
         .with_columns(avg_new_nadac, avg_old_nadac)
         .with_columns(diff_per_rx)
         .with_columns(abs_diff_col(), classification(), avg_unit_change(), percent_change())
-        .filter(c.total_diff != 0)  # Filter out rows where total_diff is 0
-        .filter(c.total_diff.is_not_null())
     )
     return data
 
 if __name__ == "__main__":
     pass
-    #update_tables()
+    update_tables()
     
     #generate_nadac_table()
     #load_nadac().collect().glimpse()
-    #load_medispan().collect().glimpse()
+    #load_medispan().filter(c.gpi_8_base_name == 'Methylphenidate').collect().glimpse()
     # date_filter = '2025-02'
     # state_filter = 'XX'  # Example state filter, replace with actual state code if needed
     #fetch_data(date_filter, 'XX').select(c.total_diff).sum().collect().glimpse()#.sort(c.total_diff).collect().glimpse()
