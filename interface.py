@@ -20,44 +20,81 @@ def create_date_id_dict():
 class UI:
     @staticmethod
     def state_dropdown():
-        return dcc.Dropdown(
-            id='state-dropdown',
-            options=[{'label': state, 'value': abbr} for abbr, state in state_dict.items()],
-            value='XX',
-            clearable=False  # Default value
-        )
-    
+        return html.Div([
+            html.Label("Select State:"),
+            dcc.Dropdown(
+                id='state-dropdown',
+                options=[{'label': state, 'value': abbr} for abbr, state in state_dict.items()],
+                value='XX',
+                clearable=False  # Default value
+            )
+        ])
+
     @staticmethod
     def date_dropdown():
+        """Create a dropdown for selecting dates."""
         date_id_dict = [{'label': date, 'value': date_id} for date, date_id in create_date_id_dict().items()]
-        return dcc.Dropdown(
-            id='date-dropdown',
-            options=date_id_dict,#type: ignore
-            value=date_id_dict[-1]['value'] 
-        )
+        return html.Div([
+            html.Label("Select Date:"),
+            dcc.Dropdown(
+                id='date-dropdown',
+                options=date_id_dict,#type: ignore
+                value=date_id_dict[-1]['value'] 
+            )
+        ])
     
     @staticmethod
     def change_dropdown():
-        return dcc.Dropdown(
-            id='change-dropdown',
-            options=[
-                {'label': 'All', 'value': 'all'},
-                {'label': 'Increase', 'value': 'Increase'},
-                {'label': 'Decrease', 'value': 'Decrease'}
-            ],
-            value='all'
-        )
-    
+        return html.Div([
+            html.Label("Select Change:"),
+            dcc.Dropdown(
+                id='change-dropdown',
+                options=[
+                    {'label': 'All', 'value': 'all'},
+                    {'label': 'Increase', 'value': 'Increase'},
+                    {'label': 'Decrease', 'value': 'Decrease'}
+                ],
+                value='all'
+            )
+        ])
+
     @staticmethod
     def product_dropdown():
-        date_id_dict = [{'label': date, 'value': date_id} for date, date_id in create_date_id_dict().items()]
-        return dcc.Dropdown(
-            id='date-dropdown',
-            options=date_id_dict,#type: ignore
-            value=date_id_dict[-1]['value'] 
-        )
+        #date_id_dict = [{'label': date, 'value': date_id} for date, date_id in create_date_id_dict().items()]
+        return html.Div([
+            html.Label("Select products to filter:"),
+            dcc.Dropdown(
+                id='product-dropdown',
+                multi=True,  # Allow multiple selections
+                value=None,  # Default value is None, meaning no product selected
+            )
+        ])
+    
+    # add static method for product_group filter
+    @staticmethod
+    def product_group_dropdown():
+        return html.Div([
+            html.Label("Select Product Group:"),
+            dcc.Dropdown(
+                id='product-group-dropdown',
+                multi=True,  # Allow multiple selections
+                value=None,  # Default value is None, meaning no product group selected
+            )
+        ])
 
+    @staticmethod
+    def product_type_dropdown():
+        return html.Div([
+            html.Label("Select Product Type:"),
+            dcc.Dropdown(
+                id='product-type-dropdown',
+                options=[
+                    {'label': 'Product', 'value': 'product'},
+                    {'label': 'Product Group', 'value': 'product_group'}
+            ],
+            value='product'
+        )])
 
 if __name__ == '__main__':
-    # Example usage of the UI class
+    
     pass
