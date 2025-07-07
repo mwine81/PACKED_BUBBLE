@@ -146,3 +146,116 @@ def scatter_plot(df: pl.DataFrame):
     )
 
     return fig
+
+
+def map_fig(data):
+    fig = px.choropleth(
+        data,
+        locations="state",
+        locationmode="USA-states",
+        color="diff_per_rx",
+        hover_name="state",
+        title="Average Difference in Cost per Prescription by State",
+        scope="usa",
+        color_continuous_scale='RdYlBu_r',  # Match scatter plot color scale
+        hover_data={
+            'diff_per_rx': ':$,.2f',
+            'rx_count': ':,.0f' if 'rx_count' in data.columns else False,
+            'total_diff': ':$,.0f' if 'total_diff' in data.columns else False,
+            'units': ':,.0f' if 'units' in data.columns else False
+        }
+    )
+    
+    fig.update_layout(
+        # Title styling to match scatter plot
+        title={
+            'text': '<b>Geographic Analysis</b><br><span style="font-size:16px; color:#7f8c8d;">Average Difference in Cost per Prescription by State</span>',
+            'x': 0.5,
+            'xanchor': 'center',
+            'font': {'size': 20, 'family': 'Inter, Segoe UI, Arial, sans-serif', 'color': '#2c3e50'}
+        },
+        
+        # Dimensions and layout
+        width=1400,
+        height=600,
+        margin=dict(l=80, r=80, t=100, b=100),
+        
+        # Background styling
+        paper_bgcolor='rgba(255, 255, 255, 0.95)',
+        plot_bgcolor='rgba(248, 249, 250, 0.8)',
+        
+        # Geographic styling
+        geo=dict(
+            bgcolor='rgba(248, 249, 250, 0.8)',
+            lakecolor='rgba(174, 214, 241, 0.6)',
+            landcolor='rgba(236, 240, 241, 0.3)',
+            coastlinecolor='rgba(127, 140, 141, 0.5)',
+            coastlinewidth=1,
+            countrycolor='rgba(127, 140, 141, 0.8)',
+            countrywidth=2,
+            projection_type='albers usa'
+        ),
+        
+        # Color bar styling to match scatter plot
+        coloraxis_colorbar=dict(
+            title=dict(
+                text='<b>Avg Diff Per Rx</b>',
+                font=dict(size=14, family='Inter, Segoe UI, Arial, sans-serif', color='#2c3e50')
+            ),
+            tickfont=dict(size=12, family='Inter, Segoe UI, Arial, sans-serif', color='#2c3e50'),
+            tickformat='$,.2f',  # Currency formatting
+            orientation='h',
+            x=0.5,
+            y=-0.15,
+            xanchor='center',
+            len=0.8,
+            thickness=20,
+            bordercolor='rgba(149, 165, 166, 0.8)',
+            outlinewidth=2,
+            # Add tick marks
+            ticks='outside',
+            ticklen=5,
+            tickcolor='rgba(127, 140, 141, 0.8)'
+        ),
+        
+        # Font styling
+        font=dict(
+            family='Inter, Segoe UI, Arial, sans-serif',
+            size=12,
+            color='#2c3e50'
+        ),
+        
+        # Hover styling
+        hoverlabel=dict(
+            bgcolor='rgba(255, 255, 255, 0.95)',
+            bordercolor='rgba(44, 62, 80, 0.8)',
+            font=dict(size=12, family='Inter, Segoe UI, Arial, sans-serif', color='#2c3e50')
+        )
+    )
+    
+    # Enhanced trace styling
+    fig.update_traces(
+        # Custom hover template with currency formatting
+        hovertemplate=(
+            "<b>%{hovertext}</b><br>"
+            "<b>Avg Diff Per Rx:</b> %{z:$,.2f}<br>"
+            + ("<b>Rx Count:</b> %{customdata[0]:,.0f}<br>" if 'rx_count' in data.columns else "")
+            + ("<b>Total Difference:</b> %{customdata[1]:$,.0f}<br>" if 'total_diff' in data.columns else "")
+            + ("<b>Units:</b> %{customdata[2]:,.0f}<br>" if 'units' in data.columns else "")
+            + "<extra></extra>"
+        ),
+        
+        # Add custom data for hover if available
+        customdata=data[[
+            col for col in ['rx_count', 'total_diff', 'units'] 
+            if col in data.columns
+        ]].to_numpy() if any(col in data.columns for col in ['rx_count', 'total_diff', 'units']) else None,
+        
+        # Border styling for states
+        marker_line=dict(
+            color='rgba(44, 62, 80, 0.8)',
+            width=1.5
+        )
+    )
+    
+    return fig
