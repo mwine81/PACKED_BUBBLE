@@ -25,8 +25,6 @@ class UI:
             dcc.Dropdown(
                 id='state-dropdown',
                 options=[{'label': state, 'value': abbr} for abbr, state in state_dict.items()],
-                value='XX',
-                clearable=False  # Default value
             )
         ])
 
@@ -39,7 +37,8 @@ class UI:
             dcc.Dropdown(
                 id='date-dropdown',
                 options=date_id_dict,#type: ignore
-                value=date_id_dict[-1]['value'] 
+                value=date_id_dict[-1]['value'],
+                clearable=False,  # Make the dropdown not clearable 
             )
         ])
     
@@ -50,7 +49,7 @@ class UI:
             dcc.Dropdown(
                 id='change-dropdown',
                 options=[
-                    {'label': 'All', 'value': 'all'},
+            
                     {'label': 'Increase', 'value': 'Increase'},
                     {'label': 'Decrease', 'value': 'Decrease'}
                 ],
@@ -92,7 +91,8 @@ class UI:
                     {'label': 'Product', 'value': 'product'},
                     {'label': 'Product Group', 'value': 'product_group'}
             ],
-            value='product'
+            value='product',
+            clearable=False
         )])
     
     @staticmethod

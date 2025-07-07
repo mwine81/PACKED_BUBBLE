@@ -40,7 +40,7 @@ def update_graph(product_view, state, date, product_dropdown, product_group_drop
 
     # if ctx.triggered_id == 'product-dropdown
     base_data = fetch_data(base)
-    if change != 'all':
+    if change:
         base_data = base_data.filter(c.classification == change)
     
 
@@ -55,7 +55,9 @@ def update_graph(product_view, state, date, product_dropdown, product_group_drop
     state_data = aggregate_data(base_data, 'state').sort(c.diff_per_rx, descending=False).filter(c.state != 'XX').collect(engine='streaming')
     state_fig = map_fig(state_data, map_column)
 
-    fig_data = aggregate_data(base_data.filter(c.state == state), 'product_group' if product_view == 'product_group' else 'product')
+    state_filter = 'XX' if not state else state
+
+    fig_data = aggregate_data(base_data.filter(c.state == state_filter), 'product_group' if product_view == 'product_group' else 'product')
 
     fig = scatter_plot(fig_data.collect(engine='streaming'))
 
