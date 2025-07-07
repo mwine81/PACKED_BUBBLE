@@ -117,8 +117,7 @@ def scatter_plot(df: pl.DataFrame):
                 'len': 0.8,
                 'thickness': 20,
                 'tickfont': {'size': 11, 'color': '#7f8c8d'},
-                'bordercolor': 'rgba(149, 165, 166, 0.3)',
-                'borderwidth': 1
+                # Removed bordercolor and borderwidth to remove border
             }
         },
         plot_bgcolor='rgba(255, 255, 255, 0.95)',  # Nearly white background for better contrast
