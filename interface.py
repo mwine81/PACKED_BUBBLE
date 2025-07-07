@@ -94,6 +94,20 @@ class UI:
             ],
             value='product'
         )])
+    
+    @staticmethod
+    def map_column_dropdown():
+        return html.Div([
+            html.Label("Select Map Column:"),
+            dcc.Dropdown(
+                id='map-column-dropdown',
+                options=[
+                    {'label': 'Diff per RX', 'value': 'diff_per_rx'},
+                    {'label': 'Total Diff', 'value': 'total_diff'},
+                ],
+                value='diff_per_rx'
+            )
+        ])
 
 if __name__ == '__main__':
     

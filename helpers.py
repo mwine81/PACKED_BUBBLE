@@ -75,7 +75,7 @@ def fetch_data(data, **kwargs) -> pl.LazyFrame:
     data = data.pipe(calculate_unit_price_change)
     
     # add total difference column
-    data = data.with_columns((c.new_nadac - c.old_nadac).alias('total_diff'))
+    data = data.with_columns((c.new_nadac - c.old_nadac).alias('total_diff')).with_columns(classification())
     return data
     
 def aggregate_data(data: pl.LazyFrame, group_by_col: str) -> pl.LazyFrame:

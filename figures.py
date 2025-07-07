@@ -148,14 +148,16 @@ def scatter_plot(df: pl.DataFrame):
     return fig
 
 
-def map_fig(data):
+def map_fig(data, color_column):
+    title = "Average Difference in Cost per Prescription by State" if color_column == 'diff_per_rx' else "Total Difference by State"
+    color_bar_title = "Avg Diff Per Rx" if color_column == 'diff_per_rx' else "Total Difference"
     fig = px.choropleth(
         data,
         locations="state",
         locationmode="USA-states",
-        color="diff_per_rx",
+        color=color_column,
         hover_name="state",
-        title="Average Difference in Cost per Prescription by State",
+        title=title,
         scope="usa",
         color_continuous_scale='RdYlBu_r',  # Match scatter plot color scale
         hover_data={
@@ -169,7 +171,7 @@ def map_fig(data):
     fig.update_layout(
         # Title styling to match scatter plot
         title={
-            'text': '<b>Geographic Analysis</b><br><span style="font-size:16px; color:#7f8c8d;">Average Difference in Cost per Prescription by State</span>',
+            'text': f'<b>Geographic Analysis</b><br><span style="font-size:16px; color:#7f8c8d;">{title}</span>',
             'x': 0.5,
             'xanchor': 'center',
             'font': {'size': 20, 'family': 'Inter, Segoe UI, Arial, sans-serif', 'color': '#2c3e50'}
@@ -199,7 +201,7 @@ def map_fig(data):
         # Color bar styling to match scatter plot
         coloraxis_colorbar=dict(
             title=dict(
-                text='<b>Avg Diff Per Rx</b>',
+                text=f'<b>{color_bar_title}</b>',
                 font=dict(size=14, family='Inter, Segoe UI, Arial, sans-serif', color='#2c3e50')
             ),
             tickfont=dict(size=12, family='Inter, Segoe UI, Arial, sans-serif', color='#2c3e50'),

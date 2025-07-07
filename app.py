@@ -15,7 +15,8 @@ app.layout = html.Div([
     UI.product_dropdown(),
     UI.state_dropdown(),
     UI.date_dropdown(),
-    # UI.change_dropdown(),
+    UI.change_dropdown(),
+    UI.map_column_dropdown(),
     
     dcc.Graph(id='change-graph'),
     dcc.Graph(id='state-graph')
@@ -31,13 +32,17 @@ app.layout = html.Div([
     Input('date-dropdown', 'value'),
     Input('product-dropdown', 'value'),
     Input('product-group-dropdown', 'value'),
+    Input('change-dropdown', 'value'),
+    Input('map-column-dropdown', 'value')
 )
-def update_graph(product_view, state, date, product_dropdown, product_group_dropdown):
+def update_graph(product_view, state, date, product_dropdown, product_group_dropdown, change, map_column):
     base = base_query(date_id=date)
-
 
     # if ctx.triggered_id == 'product-dropdown
     base_data = fetch_data(base)
+    if change != 'all':
+        base_data = base_data.filter(c.classification == change)
+    
 
     product_groups = base_data.select(c.product_group).unique().sort(c.product_group).collect(engine='streaming').to_series().to_list()
     if product_group_dropdown:
@@ -47,9 +52,9 @@ def update_graph(product_view, state, date, product_dropdown, product_group_drop
     if product_dropdown:
         base_data = base_data.filter(c.product.is_in(product_dropdown))   
     
+    state_data = aggregate_data(base_data, 'state').sort(c.diff_per_rx, descending=False).filter(c.state != 'XX').collect(engine='streaming')
+    state_fig = map_fig(state_data, map_column)
 
-    state_data = aggregate_data(base_data, 'state').sort(c.diff_per_rx, descending=False).collect(engine='streaming')
-    state_fig = map_fig(state_data)
     fig_data = aggregate_data(base_data.filter(c.state == state), 'product_group' if product_view == 'product_group' else 'product')
 
     fig = scatter_plot(fig_data.collect(engine='streaming'))
