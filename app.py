@@ -1,45 +1,67 @@
 import dash
-from dash import html,dcc, Output, Input
+from dash import html,dcc, Output, Input, ctx
 from interface import UI
-from helpers import fetch_data
-from figures import scatter_change_figure
-import polars as pl
+from helpers import base_query, fetch_data, aggregate_data
+from figures import scatter_plot, map_fig
 from polars import col as c
-import polars.selectors as cs
 
 app = dash.Dash(__name__)
 
 app.layout = html.Div([
     html.H1("Hello, Dash!"),
     html.P("This is a basic Dash app."),
+    UI.product_type_dropdown(),
+    UI.product_group_dropdown(),
+    UI.product_dropdown(),
     UI.state_dropdown(),
     UI.date_dropdown(),
-    dcc.Graph(id='change-graph', figure={}),
+    UI.change_dropdown(),
+    UI.map_column_dropdown(),
+    
+    dcc.Graph(id='change-graph'),
+    dcc.Graph(id='state-graph')
 ])
 
 @app.callback(
     Output('change-graph', 'figure'),
+    Output('product-group-dropdown', 'options'),
+    Output('product-dropdown', 'options'),
+    Output('state-graph', 'figure'),
+    Input('product-type-dropdown', 'value'),
     Input('state-dropdown', 'value'),
-    Input('date-dropdown', 'value')
+    Input('date-dropdown', 'value'),
+    Input('product-dropdown', 'value'),
+    Input('product-group-dropdown', 'value'),
+    Input('change-dropdown', 'value'),
+    Input('map-column-dropdown', 'value')
 )
-def update_graph(state, date):
-    data = fetch_data(date, state)
+def update_graph(product_view, state, date, product_dropdown, product_group_dropdown, change, map_column):
+    base = base_query(date_id=date)
+
+    # if ctx.triggered_id == 'product-dropdown
+    base_data = fetch_data(base)
+    if change:
+        base_data = base_data.filter(c.classification == change)
     
-    avg_new_nadac = (c.new_nadac / c.units).round(4).alias('avg_new_nadac')
-    avg_old_nadac = (c.old_nadac / c.units).round(4).alias('avg_old_nadac')
-    diff_per_rx = (c.total_diff / c.rx_count).round(2).alias('diff_per_rx')
-    data = (
-        data
-        .group_by('product_group')
-        .agg(cs.numeric().exclude('avg_new_nadac','avg_old_nadac','diff_per_rx').sum())
-        .with_columns(avg_new_nadac,
-                     avg_old_nadac,
-                     diff_per_rx = (c.total_diff / c.rx_count).round(2).alias('diff_per_rx')
-                     )
-    )
 
-    return scatter_change_figure(data)
+    product_groups = base_data.select(c.product_group).unique().sort(c.product_group).collect(engine='streaming').to_series().to_list()
+    if product_group_dropdown:
+        base_data = base_data.filter(c.product_group.is_in(product_group_dropdown))
+    
+    products = base_data.select(c.product).unique().sort(c.product).collect(engine='streaming').to_series().to_list()
+    if product_dropdown:
+        base_data = base_data.filter(c.product.is_in(product_dropdown))   
+    
+    state_data = aggregate_data(base_data, 'state').sort(c.diff_per_rx, descending=False).filter(c.state != 'XX').collect(engine='streaming')
+    state_fig = map_fig(state_data, map_column)
 
+    state_filter = 'XX' if not state else state
+
+    fig_data = aggregate_data(base_data.filter(c.state == state_filter), 'product_group' if product_view == 'product_group' else 'product')
+
+    fig = scatter_plot(fig_data.collect(engine='streaming'))
+
+    return fig, product_groups, products, state_fig
 
 if __name__ == '__main__':
     app.run(debug=True)
