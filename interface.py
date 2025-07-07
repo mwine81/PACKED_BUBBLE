@@ -105,7 +105,8 @@ class UI:
                     {'label': 'Diff per RX', 'value': 'diff_per_rx'},
                     {'label': 'Total Diff', 'value': 'total_diff'},
                 ],
-                value='diff_per_rx'
+                value='diff_per_rx',
+                clearable=False  # Make the dropdown not clearable
             )
         ])
 
